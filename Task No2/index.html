@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scientific Glass Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: rgba(102, 126, 234, 0.8);
+      --secondary-color: rgba(118, 75, 162, 0.8);
+      --glass-bg: rgba(255, 255, 255, 0.15);
+      --glass-border: rgba(255, 255, 255, 0.25);
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      --button-bg: rgba(255, 255, 255, 0.7);
+      --button-hover: rgba(255, 255, 255, 0.9);
+      --button-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      --text-color: #333;
+      --text-light: rgba(255, 255, 255, 0.9);
+      --sci-func-bg: rgba(200, 214, 255, 0.6);
+      --equals-bg: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      --const-bg: rgba(230, 240, 255, 0.7);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: url('https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      backdrop-filter: blur(5px);
+      color: var(--text-color);
+    }
+
+    .calculator-container {
+      perspective: 1000px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .calculator {
+      background: var(--glass-bg);
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--glass-shadow);
+      padding: 25px;
+      transform-style: preserve-3d;
+      transition: transform 0.3s ease;
+      width: 100%;
+    }
+
+    .calculator:hover {
+      transform: rotateY(2deg) rotateX(2deg);
+    }
+
+    .display-container {
+      position: relative;
+      margin-bottom: 20px;
+      transform-style: preserve-3d;
+    }
+
+    .display-container::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+      border-radius: 15px;
+      z-index: -1;
+      opacity: 0.5;
+      transform: translateZ(-10px);
+    }
+
+    #display {
+      width: 100%;
+      height: 80px;
+      font-size: 2.2rem;
+      text-align: right;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+      color: var(--text-color);
+      overflow-x: auto;
+      font-weight: 300;
+      transition: all 0.3s ease;
+      margin-bottom: 10px;
+    }
+
+    #secondary-display {
+      width: 100%;
+      height: 30px;
+      font-size: 1rem;
+      text-align: right;
+      padding: 5px 15px;
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.8);
+      overflow-x: auto;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    button {
+      padding: 15px 10px;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 12px;
+      background: var(--button-bg);
+      box-shadow: var(--button-shadow);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      color: var(--text-color);
+      font-weight: 500;
+      min-height: 50px;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(255, 255, 255, 0.3), transparent);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    button:hover {
+      background: var(--button-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    button:hover::before {
+      opacity: 1;
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .operator {
+      background: rgba(255, 255, 255, 0.6);
+      color: #5a67d8;
+      font-weight: 600;
+    }
+
+    .sci-func {
+      background: var(--sci-func-bg);
+      font-size: 1rem;
+    }
+
+    .const {
+      background: var(--const-bg);
+      font-size: 1rem;
+    }
+
+    .equals {
+      background: var(--equals-bg);
+      color: var(--text-light);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      font-weight: 600;
+    }
+
+    .equals:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 75, 162, 1));
+    }
+
+    .clear, .backspace {
+      background: rgba(255, 107, 107, 0.8);
+      color: var(--text-light);
+    }
+
+    .clear:hover, .backspace:hover {
+      background: rgba(255, 107, 107, 1);
+    }
+
+    .shift {
+      background: rgba(255, 215, 0, 0.7);
+      font-weight: 600;
+    }
+
+    .shift.active {
+      background: rgba(255, 215, 0, 0.9);
+      box-shadow: inset 0 0 10px rgba(255, 195, 0, 0.5);
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    /* Animation for button press */
+    @keyframes buttonPress {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+
+    .button-press {
+      animation: buttonPress 0.2s ease;
+    }
+
+    @media (max-width: 450px) {
+      .calculator {
+        padding: 15px;
+      }
+      
+      button {
+        padding: 12px 8px;
+        font-size: 1rem;
+        min-height: 45px;
+      }
+      
+      #display {
+        height: 70px;
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator-container">
+    <div class="calculator">
+      <div class="display-container">
+        <div id="secondary-display"></div>
+        <input type="text" id="display" readonly aria-label="Calculator display">
+      </div>
+      <div class="buttons">
+        <!-- First Row -->
+        <button class="sci-func" onclick="calculateFunction('Math.sin(')">sin</button>
+        <button class="sci-func shift-hidden" onclick="calculateFunction('Math.cos(')">cos</button>
+        <button class="sci-func shift-hidden" onclick="calculateFunction('Math.tan(')">tan</button>
+        <button class="sci-func" onclick="calculateFunction('Math.log(')">log</button>
+        <button class="clear" onclick="clearDisplay()">AC</button>
+        
+        <!-- Second Row -->
+        <button class="sci-func shift-visible" onclick="calculateFunction('Math.asin(')">sin<sup>-1</sup></button>
+        <button class="sci-func shift-visible" onclick="calculateFunction('Math.acos(')">cos<sup>-1</sup></button>
+        <button class="sci-func shift-visible" onclick="calculateFunction('Math.atan(')">tan<sup>-1</sup></button>
+        <button class="sci-func" onclick="calculateFunction('Math.log10(')">log10</button>
+        <button class="backspace" onclick="backspace()"><i class="fas fa-backspace"></i></button>
+        
+        <!-- Third Row -->
+        <button class="sci-func" onclick="calculateFunction('Math.sqrt(')">√</button>
+        <button onclick="append('(')">(</button>
+        <button onclick="append(')')">)</button>
+        <button class="operator" onclick="append('/')">÷</button>
+        <button class="const" onclick="append(Math.PI.toFixed(8))">π</button>
+        
+        <!-- Fourth Row -->
+        <button class="sci-func" onclick="calculateFunction('Math.pow(')">x<sup>y</sup></button>
+        <button onclick="append('7')">7</button>
+        <button onclick="append('8')">8</button>
+        <button onclick="append('9')">9</button>
+        <button class="operator" onclick="append('*')">×</button>
+        
+        <!-- Fifth Row -->
+        <button class="sci-func" onclick="calculateFunction('Math.pow(10,')">10<sup>x</sup></button>
+        <button onclick="append('4')">4</button>
+        <button onclick="append('5')">5</button>
+        <button onclick="append('6')">6</button>
+        <button class="operator" onclick="append('-')">−</button>
+        
+        <!-- Sixth Row -->
+        <button class="sci-func" onclick="calculateFunction('Math.pow(')">x<sup>2</sup></button>
+        <button onclick="append('1')">1</button>
+        <button onclick="append('2')">2</button>
+        <button onclick="append('3')">3</button>
+        <button class="operator" onclick="append('+')">+</button>
+        
+        <!-- Seventh Row -->
+        <button class="sci-func" onclick="calculateFunction('Math.pow(')">x<sup>3</sup></button>
+        <button class="span-2" onclick="append('0')">0</button>
+        <button onclick="append('.')">.</button>
+        <button class="equals" onclick="calculate()">=</button>
+        
+        <!-- Shift button -->
+        <button class="shift" id="shiftBtn" onclick="toggleShift()">Shift</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const display = document.getElementById("display");
+    const secondaryDisplay = document.getElementById("secondary-display");
+    const shiftBtn = document.getElementById("shiftBtn");
+    let isShiftActive = false;
+    let lastAnswer = null;
+
+    // Toggle shift state
+    function toggleShift() {
+      isShiftActive = !isShiftActive;
+      shiftBtn.classList.toggle('active');
+      
+      // Toggle visibility of shift-dependent buttons
+      document.querySelectorAll('.shift-visible').forEach(btn => {
+        btn.style.display = isShiftActive ? 'block' : 'none';
+      });
+      document.querySelectorAll('.shift-hidden').forEach(btn => {
+        btn.style.display = isShiftActive ? 'none' : 'block';
+      });
+      
+      animateButton(event.target);
+    }
+
+    function append(value) {
+      if (display.value === "Error") clearDisplay();
+      
+      // Prevent multiple decimal points in a number
+      if (value === '.' && display.value.split(/[\+\-\*\/]/).pop().includes('.')) {
+        return;
+      }
+      
+      display.value += value;
+      animateButton(event.target);
+    }
+
+    function clearDisplay() {
+      display.value = "";
+      secondaryDisplay.value = "";
+    }
+
+    function backspace() {
+      display.value = display.value.slice(0, -1);
+      animateButton(event.target);
+    }
+
+    function calculateFunction(func) {
+      if (display.value === "Error") clearDisplay();
+      
+      // Handle special cases
+      if (func === 'Math.pow(') {
+        if (event.target.innerHTML.includes('x<sup>y</sup>')) {
+          display.value += 'Math.pow(';
+        } else if (event.target.innerHTML.includes('x<sup>2</sup>')) {
+          display.value += 'Math.pow(' + (display.value.match(/\d+$/) || '0') + ',2)';
+          calculate();
+          return;
+        } else if (event.target.innerHTML.includes('x<sup>3</sup>')) {
+          display.value += 'Math.pow(' + (display.value.match(/\d+$/) || '0') + ',3)';
+          calculate();
+          return;
+        } else if (event.target.innerHTML.includes('10<sup>x</sup>')) {
+          display.value += 'Math.pow(10,' + (display.value.match(/\d+$/) || '0') + ')';
+          calculate();
+          return;
+        }
+      } else {
+        display.value += func;
+      }
+      
+      animateButton(event.target);
+    }
+
+    function calculate() {
+      try {
+        if (display.value === "") return;
+        
+        // Save current expression to secondary display
+        secondaryDisplay.textContent = display.value + ' =';
+        
+        // Replace ÷ with / and × with * for evaluation
+        let expression = display.value.replace(/÷/g, '/').replace(/×/g, '*');
+        
+        // Handle percentage
+        expression = expression.replace(/(\d+)%/g, '(($1)/100)');
+        
+        // Evaluate the expression
+        const result = eval(expression);
+        
+        // Store last answer
+        lastAnswer = result;
+        
+        // Display result
+        display.value = result;
+      } catch {
+        display.value = "Error";
+      }
+      animateButton(event.target);
+    }
+
+    function animateButton(button) {
+      button.classList.add('button-press');
+      setTimeout(() => {
+        button.classList.remove('button-press');
+      }, 200);
+    }
+
+    // Keyboard support
+    document.addEventListener("keydown", function(e) {
+      const key = e.key;
+      
+      if ("0123456789+-*/.()".includes(key) || 
+          key === "Enter" || 
+          key === "Backspace" || 
+          key === "Escape" ||
+          key === "%") {
+        e.preventDefault();
+      }
+      
+      if ("0123456789".includes(key)) {
+        append(key);
+      } else if (key === "+" || key === "-" || key === "*" || key === "/") {
+        append(key);
+      } else if (key === ".") {
+        append('.');
+      } else if (key === "(" || key === ")") {
+        append(key);
+      } else if (key === "%") {
+        append('%');
+      } else if (key === "Enter" || key === "=") {
+        calculate();
+      } else if (key === "Backspace") {
+        backspace();
+      } else if (key === "Escape") {
+        clearDisplay();
+      } else if (key === "s" || key === "S") {
+        toggleShift();
+      }
+    });
+
+    
+    toggleShift(); 
+  </script>
+</body>
+</html>
